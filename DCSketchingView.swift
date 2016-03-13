@@ -43,6 +43,12 @@ public class DCSketchingView: UIView {
 	}
 	
 	
+	public func clear() {
+		self.sketch = DCSketch(lines: [])
+		self.setNeedsDisplay()
+	}
+	
+	
 	public override func drawRect(rect: CGRect) {
 		self.image.drawInRect(rect)
 	}
@@ -51,12 +57,12 @@ public class DCSketchingView: UIView {
 	// MARK: - Touch Handling
 	var trackingTouch: UITouch? = nil
 	var color = UIColor.redColor()
-	public override func touchesBegan(touches: Set<NSObject>, withEvent event: UIEvent) {
+	public override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
 		if trackingTouch != nil {
 			return
 		}
 		
-		if let touch = (touches.first as? UITouch) {
+		if let touch = touches.first {
 			trackingTouch = touch
 			
 			// Start a new line!
@@ -65,8 +71,8 @@ public class DCSketchingView: UIView {
 			self.setNeedsDisplay()
 		}
 	}
-	public override func touchesMoved(touches: Set<NSObject>, withEvent event: UIEvent) {
-		for touch in (touches as! Set<UITouch>) {
+	public override func touchesMoved(touches: Set<UITouch>, withEvent event: UIEvent?) {
+		for touch in touches {
 			if touch === trackingTouch {
 				// Add a point to our sketch's last line.
 				if let currentLine = self.sketch.lines.last {
@@ -77,13 +83,13 @@ public class DCSketchingView: UIView {
 			}
 		}
 	}
-	public override func touchesEnded(touches: Set<NSObject>, withEvent event: UIEvent) {
+	public override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
 		if trackingTouch != nil && touches.contains(trackingTouch!) {
 			trackingTouch = nil
 			self.setNeedsDisplay()
 		}
 	}
-	public override func touchesCancelled(touches: Set<NSObject>!, withEvent event: UIEvent!) {
+	public override func touchesCancelled(touches: Set<UITouch>!, withEvent event: UIEvent!) {
 		if trackingTouch != nil && touches.contains(trackingTouch!) {
 			trackingTouch = nil
 			
