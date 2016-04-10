@@ -15,33 +15,55 @@ struct DCSketchLine {
 
 struct DCSketch {
 	let lines: [DCSketchLine]
+	
+	func sketchAddingLine(line: DCSketchLine) -> DCSketch {
+		return DCSketch(lines: self.lines + [line])
+	}
+	func sketchReplacingLastLine(line: DCSketchLine) -> DCSketch {
+		return DCSketch(lines: self.lines.prefixUpTo(max(0, self.lines.count - 1)) + [line])
+	}
+	func sketchRemovingLastLine() -> DCSketch {
+		let newLines = Array(self.lines.prefixUpTo(max(0, self.lines.count - 1)))
+		return DCSketch(lines: newLines)
+	}
 }
 
-public class DCSketchingView: UIView {
-	var sketch: DCSketch = DCSketch(lines: [])
-	
-	public var image: UIImage {
-		UIGraphicsBeginImageContext(self.bounds.size)
-		let context = UIGraphicsGetCurrentContext()
+extension DCSketchLine {
+	var path: CGPath {
+		return self.points.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<CGPoint>) -> CGPath in
+			let p = CGPathCreateMutable()
+			CGPathAddLines(p, nil, buffer.baseAddress, self.points.count)
+			return p
+		}
+	}
+	func renderIn(context: CGContext) {
+		CGContextSaveGState(context)
+		CGContextSetStrokeColorWithColor(context, self.color)
+		CGContextAddPath(context, self.path)
+		CGContextStrokePath(context)
+		CGContextRestoreGState(context)
+	}
+}
+extension DCSketch {
+	func render(size: CGSize) -> UIImage {
+		UIGraphicsBeginImageContext(size)
+		let context = UIGraphicsGetCurrentContext()!
 		CGContextSetLineWidth(context, 8.0)
 		
-		for line in self.sketch.lines {
-			CGContextSetStrokeColorWithColor(context, line.color)
-			
-			let path = line.points.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<CGPoint>) -> CGPath in
-				let p = CGPathCreateMutable()
-				CGPathAddLines(p, nil, buffer.baseAddress, line.points.count)
-				return p
-			}
-			CGContextAddPath(context, path)
-			CGContextStrokePath(context)
+		for line in self.lines {
+			line.renderIn(context)
 		}
 		
 		let image = UIGraphicsGetImageFromCurrentImageContext()
 		UIGraphicsEndImageContext()
 		return image
 	}
+}
+
+public class DCSketchingView: UIView {
+	var sketch: DCSketch = DCSketch(lines: [])
 	
+	public var color = UIColor.redColor()
 	
 	public func clear() {
 		self.sketch = DCSketch(lines: [])
@@ -49,14 +71,21 @@ public class DCSketchingView: UIView {
 	}
 	
 	
+	public var image: UIImage {
+		return self.sketch.render(self.bounds.size)
+	}
 	public override func drawRect(rect: CGRect) {
-		self.image.drawInRect(rect)
+		self.image.drawInRect(self.bounds)
+	}
+	public override var bounds: CGRect {
+		didSet {
+			self.setNeedsDisplay()
+		}
 	}
 	
 	
 	// MARK: - Touch Handling
 	var trackingTouch: UITouch? = nil
-	var color = UIColor.redColor()
 	public override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
 		if trackingTouch != nil {
 			return
@@ -66,7 +95,8 @@ public class DCSketchingView: UIView {
 			trackingTouch = touch
 			
 			// Start a new line!
-			self.sketch = DCSketch(lines: self.sketch.lines + [DCSketchLine(points: [touch.locationInView(self)], color: color.CGColor)])
+			let newLine = DCSketchLine(points: [touch.locationInView(self)], color: color.CGColor)
+			self.sketch = self.sketch.sketchAddingLine(newLine)
 			
 			self.setNeedsDisplay()
 		}
@@ -77,7 +107,8 @@ public class DCSketchingView: UIView {
 				// Add a point to our sketch's last line.
 				if let currentLine = self.sketch.lines.last {
 					let lineNewPoints = currentLine.points + [touch.locationInView(self)]
-					self.sketch = DCSketch(lines: self.sketch.lines + [DCSketchLine(points: lineNewPoints, color: color.CGColor)])
+					let newLine = DCSketchLine(points: lineNewPoints, color: color.CGColor)
+					self.sketch = self.sketch.sketchReplacingLastLine(newLine)
 				}
 				self.setNeedsDisplay()
 			}
@@ -94,7 +125,7 @@ public class DCSketchingView: UIView {
 			trackingTouch = nil
 			
 			// Remove the last-drawn line from our sketch!
-			self.sketch = DCSketch(lines: Array(self.sketch.lines[0 ... min(0, self.sketch.lines.count - 1)]))
+			self.sketch = self.sketch.sketchRemovingLastLine()
 			self.setNeedsDisplay()
 		}
 	}

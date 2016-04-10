@@ -25,16 +25,22 @@ public class DCDrawingStore {
 		}
 	}
 	
-	func saveImage(image: UIImage) {
-		images.append(image)
-		
+	func saveAllImagesToUserDefaults() {
 		var imageDataArray: [NSData] = []
 		for image in images {
-			let imageData = UIImagePNGRepresentation(image)
+			let imageData = UIImagePNGRepresentation(image)!
 			imageDataArray.append(imageData)
 		}
 		
 		NSUserDefaults.standardUserDefaults().setObject(imageDataArray, forKey: kCachedImagesKey)
 		NSUserDefaults.standardUserDefaults().synchronize()
+	}
+	func saveImage(image: UIImage) {
+		// Save to our app's settings.
+		images.append(image)
+		saveAllImagesToUserDefaults()
+		
+		// Also save this image to the photos album.
+		UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
 	}
 }
