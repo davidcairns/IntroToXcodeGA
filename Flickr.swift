@@ -4,15 +4,28 @@ import UIKit
 public class Flickr {
 	let apiKey: String
 	
+	// Use this with your own API key!
 	public init(apiKey: String) {
 		self.apiKey = apiKey
 	}
+	// Use this to use David’s private API key (NOTE: ONLY WORKS DURING CLASS) :D
+	// To get your own API key, visit this page and follow the instructions (don’t worry, it’s easy!):
+	//			-->	https://www.flickr.com/services/api/misc.api_keys.html <--
 	convenience public init() {
 		let url = NSURL(string: "http://davidcairns.org/src/flickr-api-key.txt")!
 		let data = NSData(contentsOfURL: url)!
 		let key = NSString(data: data, encoding: NSUTF8StringEncoding)!
 		self.init(apiKey: key.substringToIndex(key.length - 1))
 	}
+
+	
+	// The whole shebang
+	public func imagesForSearch(search: String?) -> [UIImage] {
+		guard let search = search else { return [] }
+		let urls = self.photoURLsForSearch(search)
+		return urls.map { url in self.imageFromURL(url) }
+	}
+	
 	
 	private func flickrSearchURLForSearchTerm(searchTerm:String) -> NSURL {
 		let escapedTerm = searchTerm.stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLHostAllowedCharacterSet())!
