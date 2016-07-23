@@ -12,7 +12,7 @@ public class Flickr {
 	// To get your own API key, visit this page and follow the instructions (don’t worry, it’s easy!):
 	//			-->	https://www.flickr.com/services/api/misc.api_keys.html <--
 	convenience public init() {
-		let url = NSURL(string: "http://davidcairns.org/src/flickr-api-key.txt")!
+		let url = NSURL(string: "https://davidcairns.org/src/flickr-api-key.txt")!
 		let data = NSData(contentsOfURL: url)!
 		let key = NSString(data: data, encoding: NSUTF8StringEncoding)!
 		self.init(apiKey: key.substringToIndex(key.length - 1))
@@ -61,7 +61,7 @@ public class Flickr {
 			let server = photoDictionary["server"] as? String ?? ""
 			let secret = photoDictionary["secret"] as? String ?? ""
 			
-			return NSURL(string: "http://farm\(farm).staticflickr.com/\(server)/\(photoID)_\(secret)_m.jpg")!
+			return NSURL(string: "https://farm\(farm).staticflickr.com/\(server)/\(photoID)_\(secret)_m.jpg")!
 		}
 	}
 	
